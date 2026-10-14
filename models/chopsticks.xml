@@ -1,0 +1,60 @@
+<mujoco model="shadow_chopsticks">
+  <!-- Shadow Hand from MuJoCo Menagerie. The hand is fixed at the forearm, palm up, fingers along +x. -->
+  <include file="../mujoco_menagerie/shadow_hand/right_hand.xml"/>
+  <!-- Must come after the include: mesh paths are resolved relative to THIS file. -->
+  <compiler meshdir="../mujoco_menagerie/shadow_hand/assets"/>
+
+  <statistic extent="0.3" center="0.36 0 0.05"/>
+  <visual>
+    <global azimuth="215" elevation="-30"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <default>
+    <!-- Chopsticks: ~7-9 mm thick, 23 cm long, 12 g. condim=4 adds torsional friction so a thin stick
+         can't spin freely between two fingertips. -->
+    <default class="chopstick">
+      <geom type="capsule" size="0.0045" mass="0.012" condim="4" friction="1.2 0.02 0.002"
+            priority="1" rgba="0.62 0.42 0.25 1"/>
+      <site size="0.002" rgba="1 0 0 1"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+             markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1"/>
+    <light pos="0.3 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.1" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- Upper (moving) chopstick: pinched by thumb, index and middle. -->
+    <body name="chopstick_a" pos="0.355 -0.015 0.095">
+      <freejoint name="chopstick_a"/>
+      <geom name="chopstick_a" class="chopstick" fromto="-0.115 -0.005 0  0.115 0.005 0"/>
+      <site name="chopstick_a_tip" class="chopstick" pos="0.115 0.005 0"/>
+    </body>
+
+    <!-- Lower (anchor) chopstick: rests on the palm and the ring/little fingertips. -->
+    <body name="chopstick_b" pos="0.395 0.0145 0.045">
+      <freejoint name="chopstick_b"/>
+      <geom name="chopstick_b" class="chopstick" fromto="-0.115 -0.0025 -0.015  0.115 0.0025 0.015"
+            rgba="0.55 0.36 0.2 1"/>
+      <site name="chopstick_b_tip" class="chopstick" pos="0.115 0.0025 0.015"/>
+    </body>
+  </worldbody>
+
+  <!-- Temporary "clamps" used only by make_grip.py: they pin each chopstick where it is placed above
+       while the fingers close around it. Off by default. -->
+  <equality>
+    <weld name="clamp_a" body1="chopstick_a" active="false"/>
+    <weld name="clamp_b" body1="chopstick_b" active="false"/>
+  </equality>
+
+  <!-- Written by make_grip.py -->
+  <include file="grip_keyframe.xml"/>
+</mujoco>

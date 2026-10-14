@@ -1,0 +1,70 @@
+<mujoco model="shadow_training_chopsticks">
+  <!-- Shadow Hand rotated thumb-up / pinky-down (see make_rotated_hand.py). -->
+  <include file="right_hand_rotated.xml"/>
+  <!-- Must come after the include: mesh paths resolve relative to THIS file. -->
+  <compiler meshdir="../mujoco_menagerie/shadow_hand/assets"/>
+
+  <statistic extent="0.3" center="0.38 0.06 0.0"/>
+  <visual>
+    <global azimuth="200" elevation="-15"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <default>
+    <!-- Chopsticks: 23 cm long, 9 mm thick, 12 g each. -->
+    <default class="chopstick">
+      <geom type="capsule" size="0.0045" mass="0.012" condim="4" friction="1.2 0.02 0.002"/>
+      <site size="0.002" rgba="1 0 0 1"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+             markrgb="0.8 0.8 0.8" width="300" height="300"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 1"/>
+    <light pos="0.3 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.15" size="0 0 0.05" type="plane" material="groundplane"/>
+    <!-- Fixed camera for demo videos. In the viewer: Rendering panel > Camera > "demo". -->
+    <camera name="demo" mode="targetbody" target="chopstick_b" pos="0.62 -0.25 0.12"/>
+
+    <!-- LOWER chopstick (stays still). Body origin = hinge point near its back end.
+         Its x-axis runs along the stick toward the tip; z-axis is the hinge axis.
+         It sits in the thumb-index web and rests over the ring finger, and is welded
+         to the palm below (the "training" part: it can't slip). -->
+    <body name="chopstick_b" pos="0.3170 0.0195 0.0411" quat="0.7312 0.5127 0.4103 0.1847">
+      <freejoint name="chopstick_b"/>
+      <geom name="chopstick_b" class="chopstick" fromto="-0.0250 0 0  0.2050 0 0" rgba="0.55 0.36 0.2 1"/>
+      <site name="chopstick_b_tip" class="chopstick" pos="0.2050 0 0"/>
+      <!-- Plastic connector joining the two sticks (visual only). -->
+      <geom name="connector" type="box" size="0.006 0.0090 0.006" pos="0 0.0050 0"
+            rgba="0.15 0.15 0.15 1" contype="0" conaffinity="0" mass="0.003"/>
+
+      <!-- UPPER chopstick (the one that moves). Hinged to the lower stick at the connector,
+           like kids' training chopsticks. A torsion spring pushes it OPEN (springref, rad);
+           the index and middle fingertips press it CLOSED. hinge = 0 means the tips touch. -->
+      <body name="chopstick_a" pos="0 0.0100 0">
+        <joint name="hinge" type="hinge" axis="0 0 1" range="0 0.5" stiffness="0.1" springref="0.4" damping="0.002"/>
+        <geom name="chopstick_a" class="chopstick" fromto="-0.0250 0 0  0.2050 -0.0010 0" rgba="0.62 0.42 0.25 1"/>
+        <site name="chopstick_a_tip" class="chopstick" pos="0.2050 -0.0010 0"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- The sticks are joined by the hinge, so they shouldn't collide with each other. -->
+  <contact>
+    <exclude body1="chopstick_a" body2="chopstick_b"/>
+  </contact>
+
+  <!-- Keeps the lower stick fixed relative to the palm. -->
+  <equality>
+    <weld name="lower_stick_in_hand" body1="rh_palm" body2="chopstick_b"/>
+  </equality>
+
+  <!-- The settled starting grip (pose + finger targets), written by make_grip.py. -->
+  <include file="grip_keyframe.xml"/>
+</mujoco>
