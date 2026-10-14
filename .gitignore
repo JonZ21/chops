@@ -1,0 +1,4 @@
+.venv/
+mujoco_menagerie/
+*.mp4
+__pycache__/
